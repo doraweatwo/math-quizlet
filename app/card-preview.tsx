@@ -42,40 +42,55 @@ export default function CardPreviewScreen() {
   const generateCards = async () => {
     try {
       setLoading(true);
+      if (!fileUri) return;
 
-      // 패턴 설정 파싱
-      let pattern: PatternConfig = {
-        problemPattern: "【(\\d+)】",
-        solutionPattern: "【(\\d+)】",
-      };
-
-      if (patternConfig) {
-        pattern = JSON.parse(patternConfig);
-      }
-
-      // 샘플 카드 생성 (실제로는 PDF에서 추출)
-      const generatedCards: Card[] = [];
+      // 1. 서버에 PDF 분석 요청 (OCR 및 영역 감지)
+      // 실제 환경에서는 trpc.pdf.analyzePDF.useQuery 등을 사용
+      // 여기서는 핵심 로직 구현을 위해 프로세스 시뮬레이션 및 API 호출 구조 작성
+      
       const problemSetId = uuidv4();
+      const generatedCards: Card[] = [];
 
-      // 1~10번 문제 생성 (샘플)
-      for (let i = 1; i <= 10; i++) {
-        const card: Card = {
-          id: uuidv4(),
-          problemSetId,
-          problemNumber: String(i),
-          problemImageUri: fileUri || "", // 실제로는 크롭된 이미지 경로
-          solutionImageUri: fileUri || "", // 실제로는 해설 이미지 경로
-          difficulty: 1,
-          averageTime: 0,
-          status: "unsolved",
-          attempts: 0,
-          correctAttempts: 0,
-        };
-        generatedCards.push(card);
+      // AI 분석 결과 (예시: 서버에서 받아온 데이터)
+      // const analysis = await trpc.pdf.analyzePDF.query({ fileUrl: fileUri });
+      
+      // 임시 시뮬레이션: 실제로는 서버 LLM이 분석한 좌표를 바탕으로 크롭 진행
+      const mockAnalysis = [
+        { number: "1", type: "problem", box: [50, 100, 400, 200] },
+        { number: "1", type: "solution", box: [50, 600, 400, 200] },
+        { number: "2", type: "problem", box: [500, 100, 400, 200] },
+        { number: "2", type: "solution", box: [500, 600, 400, 200] },
+      ];
+
+      // 2. 분석된 좌표를 바탕으로 이미지 크롭
+      const processedNumbers = new Set(mockAnalysis.map(a => a.number));
+      
+      for (const num of processedNumbers) {
+        const prob = mockAnalysis.find(a => a.number === num && a.type === "problem");
+        const sol = mockAnalysis.find(a => a.number === num && a.type === "solution");
+
+        if (prob && sol) {
+          // 실제 크롭 로직 호출 (pdf-processor.ts의 cropImage 사용)
+          // const probUri = await cropImage(fileUri, prob.box[0], prob.box[1], prob.box[2], prob.box[3]);
+          // const solUri = await cropImage(fileUri, sol.box[0], sol.box[1], sol.box[2], sol.box[3]);
+
+          const card: Card = {
+            id: uuidv4(),
+            problemSetId,
+            problemNumber: num,
+            problemImageUri: fileUri, // 실제 구현 시 probUri 적용
+            solutionImageUri: fileUri, // 실제 구현 시 solUri 적용
+            difficulty: 1,
+            averageTime: 0,
+            status: "unsolved",
+            attempts: 0,
+            correctAttempts: 0,
+          };
+          generatedCards.push(card);
+        }
       }
 
       setCards(generatedCards);
-      // 모든 카드 기본 선택
       setSelectedCards(new Set(generatedCards.map((c) => c.id)));
     } catch (error) {
       console.error("Failed to generate cards:", error);
