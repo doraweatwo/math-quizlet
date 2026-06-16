@@ -8,18 +8,16 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "distribution": "store"
     }
   },
   "submit": {
-    "production": {
-      "android": {
-        "serviceAccount": "keyfile.json",
-        "track": "internal"
-      }
-    }
+    "production": {}
   }
 }
