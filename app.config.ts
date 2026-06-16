@@ -91,7 +91,10 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-router",
-    "react-native-reanimated/plugin",
+    [
+      "react-native-reanimated/plugin",
+      {}
+    ],
     [
       "expo-audio",
       {
