@@ -43,7 +43,7 @@ const config: ExpoConfig = {
   slug: env.appSlug,
   extra: {
     eas: {
-      projectId: "33388701-f404-4e20-9671-558913926860"
+      projectId: "ebff0638-42b3-4434-bc61-aeab79518b89"
     }
   },
   version: "1.0.0",
