@@ -89,6 +89,8 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="oauth/callback" />
             <Stack.Screen name="pdf-upload" />
+            <Stack.Screen name="pattern-setup" />
+            <Stack.Screen name="card-preview" />
             <Stack.Screen name="study-session" />
             <Stack.Screen name="session-result" />
           </Stack>

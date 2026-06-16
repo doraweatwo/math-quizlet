@@ -13,6 +13,7 @@ export default function PDFUploadScreen() {
   
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | null>(null);
+  const [fileUri, setFileUri] = useState<string | null>(null);
 
   const handlePickPDF = async () => {
     try {
@@ -23,18 +24,19 @@ export default function PDFUploadScreen() {
       if (result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         setFileName(file.name);
+        setFileUri(file.uri);
         
-        // 파일 크기 포맷팅
+        // 파일 크기 포맧팅
         if (file.size) {
           const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
           setFileSize(`${sizeMB} MB`);
         }
         
-        // TODO: 패턴 설정 화면으로 이동
-        // router.push({
-        //   pathname: "/pattern-setup",
-        //   params: { fileUri: file.uri, fileName: file.name },
-        // });
+        // 패턴 설정 화면으로 이동
+        router.push({
+          pathname: "/pattern-setup" as any,
+          params: { fileUri: file.uri, fileName: file.name },
+        });
       }
     } catch (error) {
       console.error("Failed to pick PDF:", error);
@@ -125,7 +127,14 @@ export default function PDFUploadScreen() {
           <Text className="font-semibold text-foreground">Cancel</Text>
         </Pressable>
         <Pressable
-          onPress={handlePickPDF}
+          onPress={() => {
+            if (fileName && fileUri) {
+              router.push({
+                pathname: "/pattern-setup" as any,
+                params: { fileUri, fileName },
+              });
+            }
+          }}
           disabled={!fileName}
           className={`rounded-lg py-3 items-center justify-center active:opacity-80 ${
             fileName ? "bg-primary" : "bg-muted opacity-50"

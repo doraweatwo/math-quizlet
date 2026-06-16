@@ -8,15 +8,15 @@
 
 ## Phase 2: PDF 처리 & 패턴 설정
 - [x] PDF 파일 선택 기능 (expo-document-picker)
-- [ ] PDF 미리보기 화면 (페이지 네비게이션)
+- [x] PDF 미리보기 화면 (페이지 네비게이션) - pattern-setup.tsx
 - [ ] 드래그 기반 영역 선택 UI
-- [ ] 패턴 정규식 기반 인식 로직
-- [ ] 패턴 미리보기 (1~2페이지 적용)
+- [x] 패턴 정규식 기반 인식 로직
+- [x] 패턴 미리보기 (1~2페이지 적용)
 
 ## Phase 3: 온디바이스 카드 추출
 - [x] PDF → 이미지 변환 (expo-file-system)
 - [x] 이미지 크롭 로직 (좌표 기반)
-- [ ] 번호 인식 및 문제/해설 매칭
+- [x] 번호 인식 및 문제/해설 매칭 - card-preview.tsx
 - [x] 카드 데이터 모델 정의
 - [x] 로컬 SQLite 저장 (expo-sqlite)
 
