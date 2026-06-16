@@ -1,4 +1,4 @@
-import { ScrollView, View, Text, Pressable, FlatList } from "react-native";
+import { ScrollView, View, Text, Pressable, FlatList, useWindowDimensions } from "react-native";
 import { useEffect, useState } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { useRouter } from "expo-router";
@@ -10,8 +10,14 @@ import { useColors } from "@/hooks/use-colors";
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { width } = useWindowDimensions();
+  
   const [problemSets, setProblemSets] = useState<ProblemSet[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // 반응형 컬럼 수
+  const isTablet = width > 600;
+  const numColumns = isTablet ? 2 : 1;
 
   useEffect(() => {
     initDB();
@@ -62,7 +68,6 @@ export default function HomeScreen() {
     return date.toLocaleDateString("ko-KR", {
       month: "short",
       day: "numeric",
-      year: "numeric",
     });
   };
 
@@ -70,7 +75,7 @@ export default function HomeScreen() {
     <ScreenContainer className="bg-background">
       <View className="flex-1">
         {/* Header */}
-        <View className="px-6 py-4 border-b border-border">
+        <View className="px-6 py-4 border-b border-border bg-surface">
           <Text className="text-3xl font-bold text-foreground">My Problem Sets</Text>
           <Text className="text-sm text-muted mt-1">
             {problemSets.length} {problemSets.length === 1 ? "set" : "sets"}
@@ -89,10 +94,10 @@ export default function HomeScreen() {
           >
             <View className="flex-1 items-center justify-center gap-4">
               <MaterialIcons name="description" size={64} color={colors.muted} />
-              <Text className="text-lg font-semibold text-foreground">
+              <Text className="text-lg font-semibold text-foreground text-center">
                 No Problem Sets Yet
               </Text>
-              <Text className="text-sm text-muted text-center">
+              <Text className="text-sm text-muted text-center max-w-xs">
                 Import a PDF to get started with your math practice
               </Text>
               <Pressable
@@ -107,23 +112,31 @@ export default function HomeScreen() {
           <FlatList
             data={problemSets}
             keyExtractor={(item) => item.id}
+            numColumns={numColumns}
             contentContainerStyle={{ padding: 16, gap: 12 }}
+            columnWrapperStyle={numColumns > 1 ? { gap: 12 } : undefined}
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => handleStudy(item.id)}
-                className="bg-surface rounded-lg p-4 border border-border active:opacity-70"
+                className={`bg-surface rounded-lg p-4 border border-border active:opacity-70 ${
+                  numColumns > 1 ? "flex-1" : "w-full"
+                }`}
               >
-                <View className="flex-row items-center justify-between">
+                <View className="flex-row items-start justify-between gap-3">
                   <View className="flex-1">
-                    <Text className="text-lg font-semibold text-foreground">
+                    <Text
+                      className="text-base font-semibold text-foreground"
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
+                    >
                       {item.title}
                     </Text>
-                    <Text className="text-sm text-muted mt-1">
+                    <Text className="text-sm text-muted mt-2">
                       {item.totalCards} cards
                     </Text>
                     {item.lastStudiedAt && (
                       <Text className="text-xs text-muted mt-1">
-                        Last studied: {formatDate(item.lastStudiedAt)}
+                        {formatDate(item.lastStudiedAt)}
                       </Text>
                     )}
                   </View>
@@ -131,7 +144,7 @@ export default function HomeScreen() {
                     onPress={() => handleDelete(item.id)}
                     className="p-2 active:opacity-60"
                   >
-                    <MaterialIcons name="delete-outline" size={24} color={colors.error} />
+                    <MaterialIcons name="delete-outline" size={20} color={colors.error} />
                   </Pressable>
                 </View>
               </Pressable>
@@ -139,18 +152,20 @@ export default function HomeScreen() {
           />
         )}
 
-        {/* Add Button */}
-        <View className="px-6 py-4 border-t border-border">
-          <Pressable
-            onPress={handleAddProblemSet}
-            className="bg-primary rounded-lg py-3 items-center justify-center active:opacity-80"
-          >
-            <View className="flex-row items-center gap-2">
-              <MaterialIcons name="add" size={24} color="white" />
-              <Text className="text-white font-semibold">Import New PDF</Text>
-            </View>
-          </Pressable>
-        </View>
+        {/* Add Button - 안전한 위치 */}
+        {problemSets.length > 0 && (
+          <View className="px-6 py-4 border-t border-border bg-surface">
+            <Pressable
+              onPress={handleAddProblemSet}
+              className="bg-primary rounded-lg py-3 items-center justify-center active:opacity-80"
+            >
+              <View className="flex-row items-center gap-2">
+                <MaterialIcons name="add" size={24} color="white" />
+                <Text className="text-white font-semibold">Import New PDF</Text>
+              </View>
+            </Pressable>
+          </View>
+        )}
       </View>
     </ScreenContainer>
   );

@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Image } from "react-native";
+import { View, Text, Pressable, Image, ScrollView, useWindowDimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -12,6 +12,7 @@ export default function StudySessionScreen() {
   const router = useRouter();
   const colors = useColors();
   const { problemSetId } = useLocalSearchParams<{ problemSetId: string }>();
+  const { width, height } = useWindowDimensions();
   
   const [cards, setCards] = useState<Card[]>([]);
   const [session, setSession] = useState<StudySessionType | null>(null);
@@ -19,6 +20,11 @@ export default function StudySessionScreen() {
   const [difficulty, setDifficulty] = useState(1);
   const [timeSpent, setTimeSpent] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
+  // 가로/세로 모드 감지
+  const isLandscape = width > height;
+  const isTablet = width > 600;
 
   useEffect(() => {
     initSession();
@@ -48,6 +54,7 @@ export default function StudySessionScreen() {
 
       const nextCard = getNextCard(newSession, fetchedCards);
       setCurrentCard(nextCard);
+      setImageError(false);
     } catch (error) {
       console.error("Failed to initialize session:", error);
     } finally {
@@ -71,6 +78,7 @@ export default function StudySessionScreen() {
     setSession(updatedSession);
     setTimeSpent(0);
     setDifficulty(1);
+    setImageError(false);
 
     // 다음 카드 가져오기
     if (isCycleComplete(updatedSession)) {
@@ -112,97 +120,187 @@ export default function StudySessionScreen() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // 반응형 레이아웃
+  const headerHeight = 80;
+  const controlsHeight = isLandscape ? 120 : 200;
+  const imageHeight = height - headerHeight - controlsHeight - 40;
+
   return (
-    <ScreenContainer className="bg-background">
+    <ScreenContainer className="bg-background" edges={["top", "left", "right", "bottom"]}>
       <View className="flex-1">
         {/* Header */}
-        <View className="px-6 py-4 border-b border-border">
+        <View className="px-4 py-3 border-b border-border bg-surface">
           <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-lg font-semibold text-foreground">
-              Problem {currentCard.problemNumber}
-            </Text>
-            <Pressable onPress={() => router.back()}>
+            <View className="flex-1">
+              <Text className="text-lg font-semibold text-foreground" numberOfLines={1}>
+                Problem {currentCard.problemNumber}
+              </Text>
+              <Text className="text-xs text-muted mt-1">
+                {progress} / {total}
+              </Text>
+            </View>
+            <Pressable onPress={() => router.back()} className="p-2 active:opacity-60">
               <MaterialIcons name="close" size={24} color={colors.foreground} />
             </Pressable>
           </View>
-          <View className="bg-border rounded-full h-2 overflow-hidden">
+          {/* Progress Bar */}
+          <View className="bg-border rounded-full h-1.5 overflow-hidden">
             <View
               className="bg-primary h-full"
               style={{ width: `${progressPercent}%` }}
             />
           </View>
-          <Text className="text-xs text-muted mt-2">
-            {progress} / {total}
-          </Text>
         </View>
 
-        {/* Problem Image */}
-        <View className="flex-1 px-6 py-6 items-center justify-center">
-          {currentCard.problemImageUri ? (
-            <Image
-              source={{ uri: currentCard.problemImageUri }}
-              className="w-full h-full rounded-lg"
-              resizeMode="contain"
-            />
-          ) : (
-            <View className="items-center gap-2">
-              <MaterialIcons name="image-not-supported" size={48} color={colors.muted} />
-              <Text className="text-muted">Problem image not available</Text>
+        {/* Main Content - Responsive Layout */}
+        {isLandscape ? (
+          // 가로 모드: 이미지와 컨트롤 좌우 배치
+          <View className="flex-1 flex-row gap-4 p-4">
+            {/* Problem Image */}
+            <View className="flex-1 bg-surface rounded-lg overflow-hidden border border-border">
+              {currentCard.problemImageUri && !imageError ? (
+                <Image
+                  source={{ uri: currentCard.problemImageUri }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="contain"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <View className="flex-1 items-center justify-center gap-2">
+                  <MaterialIcons name="image-not-supported" size={40} color={colors.muted} />
+                  <Text className="text-xs text-muted text-center px-2">
+                    {imageError ? "Failed to load image" : "No image available"}
+                  </Text>
+                </View>
+              )}
             </View>
-          )}
-        </View>
 
-        {/* Timer & Difficulty */}
-        <View className="px-6 py-4 border-t border-border gap-4">
-          {/* Timer */}
-          <View className="flex-row items-center justify-between">
-            <Text className="text-sm text-muted">Time Spent:</Text>
-            <Text className="text-lg font-semibold text-foreground">
-              {formatTime(timeSpent)}
-            </Text>
+            {/* Controls */}
+            <ScrollView className="flex-1 gap-3">
+              {/* Timer */}
+              <View className="bg-surface rounded-lg p-3 border border-border">
+                <Text className="text-xs text-muted mb-1">Time Spent</Text>
+                <Text className="text-xl font-bold text-foreground">
+                  {formatTime(timeSpent)}
+                </Text>
+              </View>
+
+              {/* Difficulty */}
+              <View className="bg-surface rounded-lg p-3 border border-border">
+                <Text className="text-xs text-muted mb-2">Difficulty</Text>
+                <View className="flex-row gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Pressable
+                      key={star}
+                      onPress={() => setDifficulty(star)}
+                      className="flex-1 p-1 active:opacity-70"
+                    >
+                      <MaterialIcons
+                        name={star <= difficulty ? "star" : "star-outline"}
+                        size={24}
+                        color={star <= difficulty ? colors.warning : colors.border}
+                      />
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              {/* Buttons */}
+              <Pressable
+                onPress={() => handleAnswer(false)}
+                className="bg-error rounded-lg py-2 items-center justify-center active:opacity-80"
+              >
+                <Text className="text-white text-sm font-semibold">Incorrect</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => handleAnswer(true)}
+                className="bg-success rounded-lg py-2 items-center justify-center active:opacity-80"
+              >
+                <Text className="text-white text-sm font-semibold">Correct</Text>
+              </Pressable>
+
+              {/* Solution Button */}
+              <Pressable className="py-2 items-center justify-center active:opacity-70 mt-2">
+                <Text className="text-primary text-sm font-semibold">View Solution</Text>
+              </Pressable>
+            </ScrollView>
           </View>
+        ) : (
+          // 세로 모드: 이미지 위, 컨트롤 아래
+          <>
+            {/* Problem Image */}
+            <View className="flex-1 px-4 py-3 items-center justify-center bg-surface rounded-lg m-4 border border-border overflow-hidden">
+              {currentCard.problemImageUri && !imageError ? (
+                <Image
+                  source={{ uri: currentCard.problemImageUri }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="contain"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <View className="items-center gap-2">
+                  <MaterialIcons name="image-not-supported" size={48} color={colors.muted} />
+                  <Text className="text-sm text-muted text-center">
+                    {imageError ? "Failed to load image" : "No image available"}
+                  </Text>
+                </View>
+              )}
+            </View>
 
-          {/* Difficulty Stars */}
-          <View className="gap-2">
-            <Text className="text-sm text-muted">Difficulty:</Text>
-            <View className="flex-row gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
+            {/* Controls */}
+            <ScrollView className="px-4 pb-4 gap-3">
+              {/* Timer & Difficulty Row */}
+              <View className="flex-row gap-3">
+                <View className="flex-1 bg-surface rounded-lg p-3 border border-border">
+                  <Text className="text-xs text-muted mb-1">Time Spent</Text>
+                  <Text className="text-lg font-bold text-foreground">
+                    {formatTime(timeSpent)}
+                  </Text>
+                </View>
+
+                <View className="flex-1 bg-surface rounded-lg p-3 border border-border">
+                  <Text className="text-xs text-muted mb-2">Difficulty</Text>
+                  <View className="flex-row gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Pressable
+                        key={star}
+                        onPress={() => setDifficulty(star)}
+                        className="flex-1 p-1 active:opacity-70"
+                      >
+                        <MaterialIcons
+                          name={star <= difficulty ? "star" : "star-outline"}
+                          size={20}
+                          color={star <= difficulty ? colors.warning : colors.border}
+                        />
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              </View>
+
+              {/* Buttons */}
+              <View className="flex-row gap-3">
                 <Pressable
-                  key={star}
-                  onPress={() => setDifficulty(star)}
-                  className="active:opacity-70"
+                  onPress={() => handleAnswer(false)}
+                  className="flex-1 bg-error rounded-lg py-3 items-center justify-center active:opacity-80"
                 >
-                  <MaterialIcons
-                    name={star <= difficulty ? "star" : "star-outline"}
-                    size={32}
-                    color={star <= difficulty ? colors.warning : colors.border}
-                  />
+                  <Text className="text-white font-semibold">Incorrect</Text>
                 </Pressable>
-              ))}
-            </View>
-          </View>
+                <Pressable
+                  onPress={() => handleAnswer(true)}
+                  className="flex-1 bg-success rounded-lg py-3 items-center justify-center active:opacity-80"
+                >
+                  <Text className="text-white font-semibold">Correct</Text>
+                </Pressable>
+              </View>
 
-          {/* Buttons */}
-          <View className="flex-row gap-3 mt-4">
-            <Pressable
-              onPress={() => handleAnswer(false)}
-              className="flex-1 bg-error rounded-lg py-3 items-center justify-center active:opacity-80"
-            >
-              <Text className="text-white font-semibold">Incorrect</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => handleAnswer(true)}
-              className="flex-1 bg-success rounded-lg py-3 items-center justify-center active:opacity-80"
-            >
-              <Text className="text-white font-semibold">Correct</Text>
-            </Pressable>
-          </View>
-
-          {/* Show Solution */}
-          <Pressable className="py-2 items-center justify-center active:opacity-70">
-            <Text className="text-primary font-semibold">View Solution</Text>
-          </Pressable>
-        </View>
+              {/* Solution Button */}
+              <Pressable className="py-3 items-center justify-center active:opacity-70 border border-primary rounded-lg">
+                <Text className="text-primary font-semibold">View Solution</Text>
+              </Pressable>
+            </ScrollView>
+          </>
+        )}
       </View>
     </ScreenContainer>
   );
