@@ -24,6 +24,6 @@ module.exports = {
         projectId: "ebff0638-42b3-4434-bc61-aeab79518b89",
       },
     },
-    plugins: ["expo-router", "react-native-reanimated/plugin"],
+    plugins: ["expo-router", "expo-image-manipulator"],
   },
 };
